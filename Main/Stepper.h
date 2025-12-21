@@ -92,9 +92,11 @@ class Stepper{
   public : void setStepDelay(int delay){this->stepDelay = delay;}
 
   ///Used to rotate the motor in the 'b' direction a number of steps equal to the number of steps provided
+  ///The delay defines how long the rotation will take in seconds
   ///LOW = CCW, HIGH = CW
-  public : void rotate(bool b, int revolutions){
+  public : void rotate(bool b, int revolutions, int delay){
     digitalWrite(directionPin, b);
+    this->stepDelay = ((delay * 1000000)/(2*revolutions*200*stepResolution));
     for(int x = 0; x < (revolutions*200*stepResolution); x++) {
       digitalWrite(stepEnablePin,HIGH);
       delayMicroseconds(stepDelay);
