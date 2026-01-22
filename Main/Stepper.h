@@ -2,11 +2,14 @@
 
 ///Class to allow the creation of a stepper instance for control of a stepper motor using an A4988 motor driver
 class Stepper{
+  private : int numMotorSteps = 200;
   private : int directionPin;
   private : int stepEnablePin;
   private : int stepDelay = 500;
   private : int stepResolution;
   private : int ms1, ms2, ms3;
+  private : float currentPosition = 0.0;
+  private : int homeSwitchPin = 8;
 
 
   ///Constructor for creating a stepper motor variable
@@ -15,6 +18,14 @@ class Stepper{
     setStepEnablePin(stepEnablePin);
     setMsPins(ms1Pin, ms2Pin, ms3Pin);
     setStepResolution(stepResolution);
+    findHome();
+  }
+
+  public : void findHome(){
+    while(digitalRead(homeSwitchPin) == LOW){
+      rotate(LOW, 1, 1);
+    }
+    currentPosition = 0;
   }
 
   ///Allows the user to change the step direction pin
@@ -91,13 +102,15 @@ class Stepper{
   ///Allows the user to change the delay between the step pulses changing the rotation speed
   public : void setStepDelay(int delay){this->stepDelay = delay;}
 
-  ///Used to rotate the motor in the 'b' direction a number of steps equal to the number of steps provided
-  ///The delay defines how long the rotation will take in seconds
+  ///Used to rotate the motor in the 'b' direction a number of steps equal to the value provided
+  ///The delay defines how long the rotation will take in milliseconds
   ///LOW = CCW, HIGH = CW
-  public : void rotate(bool b, int revolutions, int delay){
+  public : void rotate(bool b, float degrees, int delay){
     digitalWrite(directionPin, b);
-    this->stepDelay = ((delay * 1000000)/(2*revolutions*200*stepResolution));
-    for(int x = 0; x < (revolutions*200*stepResolution); x++) {
+    float pulses = (numMotorSteps*stepResolution)*(degrees / 360.0f);
+    this->stepDelay = (delay * 1000.0f) / (2.0f * pulses);
+    //this->stepDelay = ((delay * 1000000)/(2*revolutions*numMotorSteps*stepResolution));
+    for(int x = 0; x < ((int)pulses); x++) {
       digitalWrite(stepEnablePin,HIGH);
       delayMicroseconds(stepDelay);
       digitalWrite(stepEnablePin,LOW);
