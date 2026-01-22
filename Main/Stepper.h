@@ -1,26 +1,31 @@
 #include <Arduino.h>
-
+//https://www.handsontec.com/dataspecs/module/A4988.pdf
 ///Class to allow the creation of a stepper instance for control of a stepper motor using an A4988 motor driver
 class Stepper{
   private : int numMotorSteps = 200;
   private : int directionPin;
   private : int stepEnablePin;
   private : int stepDelay = 500;
-  private : int stepResolution;
-  private : int ms1, ms2, ms3;
+  private : int stepResolution = 0;
+  private : int ms1 = 0, ms2 = 1, ms3 = 2;
   private : float currentPosition = 0.0;
   private : int homeSwitchPin = 8;
+  private : float gearboxRatio = 1.0;
 
 
-  ///Constructor for creating a stepper motor variable
-  public : Stepper(int directionPin, int stepEnablePin, int stepResolution, int ms1Pin, int ms2Pin, int ms3Pin){
+  ///Constructor for creating a stepper motor variable \n
+  ///By default the ms pins are 0, 1, and 2, but can be set using the setMsPins function \n
+  ///By default the step resolution will be set to full step but can be changed with setStepResolution() \n
+  ///Upon initialization, the motor will rotate CCW to look for a zero position 
+  public : Stepper(int directionPin, int stepEnablePin, int stepResolution){
     setDirectionPin(directionPin);
     setStepEnablePin(stepEnablePin);
-    setMsPins(ms1Pin, ms2Pin, ms3Pin);
+    setMsPins(ms1, ms2, ms3);
     setStepResolution(stepResolution);
     findHome();
   }
 
+  ///A function used to run the motor CCW to look for a constant zero position
   public : void findHome(){
     while(digitalRead(homeSwitchPin) == LOW){
       rotate(LOW, 1, 1);
@@ -40,8 +45,10 @@ class Stepper{
       pinMode(stepEnablePin, OUTPUT);
     }
 
-  ///Allows the user to change the step resolution on the motor driver
-  /// 0=Full, 1=1/2 step, 2=1/4 step, 3=1/8 step, 7=1/16 step
+  public : void setGearboxRatio(float ratio){this->gearboxRatio = ratio;}
+
+  ///Allows the user to change the step resolution on the motor driver \n
+  /// 0=Full, 1=1/2 step, 2=1/4 step, 3=1/8 step, 7=1/16 step \n
   ///All other invalid entries will be set to 0
   public : void setStepResolution(int resolution){
     switch (resolution){
@@ -102,19 +109,22 @@ class Stepper{
   ///Allows the user to change the delay between the step pulses changing the rotation speed
   public : void setStepDelay(int delay){this->stepDelay = delay;}
 
-  ///Used to rotate the motor in the 'b' direction a number of steps equal to the value provided
-  ///The delay defines how long the rotation will take in milliseconds
-  ///LOW = CCW, HIGH = CW
+  ///Used to rotate the motor in the 'b' direction a number of steps equal to the value provided \n
+  ///The delay defines how long the rotation will take in milliseconds \n
+  ///LOW = CCW, HIGH = CW 
   public : void rotate(bool b, float degrees, int delay){
     digitalWrite(directionPin, b);
-    float pulses = (numMotorSteps*stepResolution)*(degrees / 360.0f);
+    float pulses = (numMotorSteps*stepResolution*gearboxRatio)*(degrees / 360.0f);
+    //step delay is the requested run time divided by double the number of pulses due to the function
+    //delaying half while running the motor is running and half between pulses
     this->stepDelay = (delay * 1000.0f) / (2.0f * pulses);
-    //this->stepDelay = ((delay * 1000000)/(2*revolutions*numMotorSteps*stepResolution));
     for(int x = 0; x < ((int)pulses); x++) {
       digitalWrite(stepEnablePin,HIGH);
       delayMicroseconds(stepDelay);
       digitalWrite(stepEnablePin,LOW);
       delayMicroseconds(stepDelay);
     }
+    if(b==LOW){currentPosition -= degrees;}
+    else{currentPosition += degrees;}
   }
 };
