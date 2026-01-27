@@ -9,7 +9,7 @@ class Stepper{
   private : int stepResolution = 0;
   private : int ms1 = 0, ms2 = 1, ms3 = 2;
   private : float currentPosition = 0.0;
-  private : int homeSwitchPin = 8;
+  private : int homeSwitchPin = 0;
   private : float gearboxRatio = 1.0;
 
 
@@ -22,7 +22,6 @@ class Stepper{
     setStepEnablePin(stepEnablePin);
     setMsPins(ms1, ms2, ms3);
     setStepResolution(stepResolution);
-    findHome();
   }
 
   ///A function used to run the motor CCW to look for a constant zero position
@@ -46,6 +45,8 @@ class Stepper{
     }
 
   public : void setGearboxRatio(float ratio){this->gearboxRatio = ratio;}
+
+  public :void setHomePin(int homePin){this->homeSwitchPin = homePin;}
 
   ///Allows the user to change the step resolution on the motor driver \n
   /// 0=Full, 1=1/2 step, 2=1/4 step, 3=1/8 step, 7=1/16 step \n
