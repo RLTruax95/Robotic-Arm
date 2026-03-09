@@ -17,17 +17,18 @@ class Stepper{
   ///By default the ms pins are 0, 1, and 2, but can be set using the setMsPins function \n
   ///By default the step resolution will be set to full step but can be changed with setStepResolution() \n
   ///Upon initialization, the motor will rotate CCW to look for a zero position 
-  public : Stepper(int directionPin, int stepEnablePin, int stepResolution){
+  public : Stepper(int directionPin, int stepEnablePin, int stepResolution, int ms1Pin, int ms2Pin, int ms3Pin, int res, int homePin){
     setDirectionPin(directionPin);
     setStepEnablePin(stepEnablePin);
-    setMsPins(ms1, ms2, ms3);
-    setStepResolution(stepResolution);
+    setMsPins(ms1Pin, ms2Pin, ms3Pin);
+    setStepResolution(res);
+    this->homeSwitchPin = homePin;
   }
 
   ///A function used to run the motor CCW to look for a constant zero position
   public : void findHome(){
     while(digitalRead(homeSwitchPin) == LOW){
-      rotate(LOW, 1, 1);
+      rotate(0, 1, 1);
     }
     currentPosition = 0;
   }
@@ -106,9 +107,6 @@ class Stepper{
     this->ms3 = ms3Pin;
     pinMode(ms3, OUTPUT);
   }
-
-  ///Allows the user to change the delay between the step pulses changing the rotation speed
-  public : void setStepDelay(int delay){this->stepDelay = delay;}
 
   ///Used to rotate the motor in the 'b' direction a number of steps equal to the value provided \n
   ///The delay defines how long the rotation will take in milliseconds \n
