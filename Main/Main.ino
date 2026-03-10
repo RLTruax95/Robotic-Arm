@@ -9,7 +9,27 @@ void setup() {
 }
 
 void loop() {
-  stepper1.rotate(0, 360, 500);
-  stepper1.rotate(0, 360, 500);
-  delay(3000);
+  setCoordinate(1,1,1);
+  setpointCheck();
+
+  delay(30000);
+  setCoordinate(-10,20,5);
+  setpointCheck();
+
+  exit(1);
+}
+
+void setCoordinate(int xCoordinate, int yCoordinate, int delay){
+  stepper1.setSetpoint(xCoordinate, delay);
+  stepper2.setSetpoint(yCoordinate, delay);
+}
+
+bool setpointCheck(){
+  while (abs(stepper1.getSetpoint()-stepper1.getCurrentPosition()) > 0.1 &&
+      abs(stepper2.getSetpoint()-stepper2.getCurrentPosition()) > 0.1){
+        stepper1.setpointRotate();
+        stepper2.setpointRotate();
+        continue;
+      }
+  return;
 }

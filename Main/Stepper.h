@@ -11,7 +11,11 @@ class Stepper{
   private : float currentPosition = 0.0;
   private : int homeSwitchPin = 0;
   private : float gearboxRatio = 1.0;
-
+  private : int setpoint = 0;
+  private : float stepCount = 0.0;
+  private : bool stepDirection = 0;
+  private : float stepDuration = 0.0;
+  private : int stepSize = 0.0;
 
   ///Constructor for creating a stepper motor variable \n
   ///By default the ms pins are 0, 1, and 2, but can be set using the setMsPins function \n
@@ -47,7 +51,11 @@ class Stepper{
 
   public : void setGearboxRatio(float ratio){this->gearboxRatio = ratio;}
 
-  public :void setHomePin(int homePin){this->homeSwitchPin = homePin;}
+  public : void setHomePin(int homePin){this->homeSwitchPin = homePin;}
+
+  public : float getCurrentPosition(){return currentPosition;}
+
+  ;public : int getSetpoint(){return setpoint;}
 
   ///Allows the user to change the step resolution on the motor driver \n
   /// 0=Full, 1=1/2 step, 2=1/4 step, 3=1/8 step, 7=1/16 step \n
@@ -107,7 +115,35 @@ class Stepper{
     this->ms3 = ms3Pin;
     pinMode(ms3, OUTPUT);
   }
+/////////////////////////////////////////////////////////Problems here somewhere//////////////////////////////////////////////////////////////
+  public : void setSetpoint(int coordinate, int delay){
+    this->setpoint = coordinate;
+    this->stepCount = (numMotorSteps*stepResolution*gearboxRatio)*((coordinate-currentPosition) / 360.0f);
+    //stepSize is the duration of each pulse used to hold the value until the coordinate is reached
+    this->stepDuration = (delay * 1000.0f) / (2.0f * stepCount);
+    this->stepSize = (coordinate - currentPosition)/stepCount;
+    if ((coordinate - currentPosition) < 0){this->stepDirection = 0;}
+    else{this->stepDirection = 1;}
+  }
 
+  public : void setpointRotate(){
+    if (stepCount > 0){
+      this->stepCount -= 1;
+    }else if (abs(setpoint-currentPosition)<stepSize){
+      float tempRatio = abs(setpoint-currentPosition)/stepSize;
+      this->stepDuration *= tempRatio;
+      this->stepSize *= tempRatio;
+      this->currentPosition = this->setpoint;
+    }
+
+    digitalWrite(directionPin, stepDirection);
+    digitalWrite(stepEnablePin,HIGH);
+    delayMicroseconds(stepDuration);
+    digitalWrite(stepEnablePin,LOW);
+    delayMicroseconds(stepDuration);
+    currentPosition += stepSize;
+  }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   ///Used to rotate the motor in the 'b' direction a number of steps equal to the value provided \n
   ///The delay defines how long the rotation will take in milliseconds \n
   ///LOW = CCW, HIGH = CW 
